@@ -1,0 +1,11 @@
+{
+  "checks": [
+    {
+      "check_id": 1,
+      "status": "unclear",
+      "summary": "The response may not be fully addressed.",
+      "evidence": "The latest diff is unavailable in this fixture.",
+      "next_action": "Reviewer should inspect the current PR changes."
+    }
+  ]
+}
