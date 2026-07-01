@@ -259,8 +259,13 @@ npm pack
 ## Tests
 
 ```bash
+npm run check
 npm test
 ```
+
+`npm run check` runs type checking, tests, and a built CLI smoke check. Use `npm test` when you only need the unit test suite.
+
+Lefthook installs a `pre-commit` hook during `npm install` via the `prepare` script. The hook runs `npm run check`.
 
 The test suite covers diff target extraction, risky file ranking, provider JSON validation, Markdown rendering, and config defaults/merging. Example fixtures live in `tests/fixtures`.
 

@@ -16,7 +16,10 @@
   "scripts": {
     "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
     "build": "npm run clean && tsc && tsc-alias",
+    "check": "npm run typecheck && npm test && npm run cli:check",
+    "cli:check": "npm run build && node bin/localrabbit --help && node bin/localrabbit review --help && node bin/localrabbit check --help && node bin/localrabbit doctor --help",
     "dev": "tsx src/cli.ts",
+    "prepare": "lefthook install",
     "prepack": "npm run build",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/**/*.test.ts"
@@ -33,6 +36,7 @@
   },
   "devDependencies": {
     "@types/node": "^26.0.1",
+    "lefthook": "^2.1.9",
     "tsc-alias": "^1.8.17",
     "tsx": "^4.22.4"
   }
