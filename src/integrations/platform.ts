@@ -2,6 +2,7 @@ import type { PullRequestInfo, ReviewComment, ReviewThread } from "@/core/types.
 
 export interface ReviewPlatformIntegration {
   name: string;
+  inferPullRequestNumber?(): Promise<number | undefined>;
   getPullRequest(number: number): Promise<PullRequestInfo>;
   getPullRequestDiff(number: number): Promise<string>;
   postReviewComments(pr: PullRequestInfo, comments: ReviewComment[]): Promise<void>;

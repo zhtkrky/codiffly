@@ -113,6 +113,12 @@ export interface ReviewRunOptions {
   dryRun?: boolean;
 }
 
+export interface ReviewProgress {
+  message: string;
+  detail?: string;
+  status?: "running" | "complete";
+}
+
 export interface CheckRunOptions {
   pr: number;
   resolve?: boolean;

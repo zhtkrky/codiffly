@@ -29,6 +29,17 @@ export function createGitHubIntegration(cwd = process.cwd()): GitHubIntegration 
   return {
     name: "GitHub",
     ensureGhAvailable,
+    async inferPullRequestNumber(): Promise<number | undefined> {
+      try {
+        await ensureGhAvailable();
+        const { stdout } = await execa("gh", ["pr", "view", "--json", "number"], { cwd });
+        const parsed = JSON.parse(stdout) as { number?: number };
+        return parsed.number;
+      } catch {
+        return undefined;
+      }
+    },
+
     async getPullRequest(number: number): Promise<PullRequestInfo> {
       await ensureGhAvailable();
       const { stdout } = await execa("gh", ["pr", "view", String(number), "--json", "number,baseRefName,headRefName,headRefOid,url"], {

@@ -52,6 +52,7 @@ async function runClaude(prompt: string, model: string, timeoutSeconds: number):
 
   try {
     const { stdout } = await execa("claude", args, {
+      stdin: "ignore",
       timeout: timeoutSeconds * 1000,
       maxBuffer: 20 * 1024 * 1024
     });

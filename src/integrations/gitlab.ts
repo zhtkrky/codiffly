@@ -16,6 +16,10 @@ interface GitLabMergeRequest {
   };
 }
 
+interface GitLabMergeRequestSummary {
+  iid?: number;
+}
+
 interface GitLabChange {
   old_path: string;
   new_path: string;
@@ -74,6 +78,26 @@ export function createGitLabIntegration(cwd = process.cwd()): ReviewPlatformInte
 
   return {
     name: "GitLab",
+
+    async inferPullRequestNumber(): Promise<number | undefined> {
+      try {
+        await ensureGlabAvailable();
+        const { stdout: branch } = await execa("git", ["branch", "--show-current"], { cwd });
+        const sourceBranch = branch.trim();
+        if (!sourceBranch) {
+          return undefined;
+        }
+        const { stdout } = await execa(
+          "glab",
+          ["mr", "list", "--source-branch", sourceBranch, "--state", "opened", "--output", "json"],
+          { cwd }
+        );
+        const parsed = JSON.parse(stdout) as GitLabMergeRequestSummary[];
+        return parsed.find((mr) => typeof mr.iid === "number")?.iid;
+      } catch {
+        return undefined;
+      }
+    },
 
     async getPullRequest(number: number): Promise<PullRequestInfo> {
       const mr = await mergeRequest(number);

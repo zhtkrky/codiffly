@@ -50,6 +50,7 @@ async function runCodex(prompt: string, model: string, timeoutSeconds: number): 
   const args = model && model !== "default" ? ["exec", "--model", model, prompt] : ["exec", prompt];
   try {
     const { stdout } = await execa("codex", args, {
+      stdin: "ignore",
       timeout: timeoutSeconds * 1000,
       maxBuffer: 20 * 1024 * 1024
     });

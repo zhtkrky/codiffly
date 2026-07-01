@@ -4,7 +4,17 @@ import type { ReviewPlatformIntegration } from "@/integrations/platform.js";
 import { byteLength } from "@/core/diff.js";
 import { filterExcludedFiles, limitDiffToRiskyFiles } from "@/core/risk.js";
 import { extractChangedLineTargets } from "@/core/targets.js";
-import type { CheckRunOptions, MappedReviewResult, RawReviewComment, Reporter, ReviewConfig, ReviewRunOptions, ReviewRunResult, ThreadCheckResult } from "@/core/types.js";
+import type {
+  CheckRunOptions,
+  MappedReviewResult,
+  RawReviewComment,
+  Reporter,
+  ReviewConfig,
+  ReviewProgress,
+  ReviewRunOptions,
+  ReviewRunResult,
+  ThreadCheckResult
+} from "@/core/types.js";
 import { buildRulePromptContext, loadReviewRules } from "@/rules/loader.js";
 
 export interface ReviewEngine {
@@ -18,20 +28,30 @@ export interface ReviewEngineDeps {
   provider: ReviewProvider;
   reporter: Reporter;
   platform?: ReviewPlatformIntegration;
+  onProgress?: (progress: ReviewProgress) => void;
 }
 
 export function createReviewEngine(deps: ReviewEngineDeps): ReviewEngine {
+  const progress = (message: string, detail?: string): void => deps.onProgress?.({ message, detail });
+  const complete = (message: string, detail?: string): void => deps.onProgress?.({ message, detail, status: "complete" });
+  const changedLineLabel = (count: number): string => `${count} changed ${count === 1 ? "line" : "lines"}`;
+  const commentLabel = (count: number): string => `${count} ${count === 1 ? "comment" : "comments"}`;
+
   const resolveDiff = async (options: ReviewRunOptions): Promise<string> => {
     if (options.pr) {
       if (!deps.platform) {
         throw new Error("A review platform integration is required for --pr.");
       }
+      progress(`Fetching ${deps.platform.name} PR/MR #${options.pr}...`, "Reading metadata.");
       await deps.platform.getPullRequest(options.pr);
+      progress("Downloading the diff...", "Using the selected platform integration.");
       return deps.platform.getPullRequestDiff(options.pr);
     }
 
+    progress("Finding the local changes to review...", "Resolving base and head refs.");
     const base = options.base ?? (await deps.git.defaultBaseBranch());
     const head = options.head ?? "HEAD";
+    progress(`Reading diff from ${base}...${head}...`, `Using ${deps.config.review.contextLines} context line(s).`);
     return deps.git.diff(base, head, deps.config.review.contextLines);
   };
 
@@ -45,11 +65,18 @@ export function createReviewEngine(deps: ReviewEngineDeps): ReviewEngine {
 
   return {
     async review(options: ReviewRunOptions & { diff?: string }): Promise<ReviewRunResult> {
+      if (options.diff) {
+        progress(
+          options.diffFile ? `Reading diff from ${options.diffFile}...` : "Reading the provided diff...",
+          "Using an existing unified diff."
+        );
+      }
       const rawDiff = options.diff ?? (await resolveDiff(options));
       if (!rawDiff.trim()) {
         throw new Error("Diff is empty. There are no changes to review.");
       }
 
+      progress("Preparing the diff for review...", "Applying exclusions and size limits.");
       const preparedDiff = prepareDiff(rawDiff);
       if (!preparedDiff.trim()) {
         throw new Error("No reviewable diff found after exclusions.");
@@ -59,9 +86,19 @@ export function createReviewEngine(deps: ReviewEngineDeps): ReviewEngine {
       if (targets.length === 0) {
         throw new Error("No changed-line targets found in the diff.");
       }
+      progress(
+        `Found ${changedLineLabel(targets.length)} to review.`,
+        `Capped at ${deps.config.review.maxCommentTargets} comment target(s).`
+      );
 
+      progress("Loading review rules...", deps.config.rules.length ? deps.config.rules.join(", ") : "No rules enabled.");
       const rules = await loadReviewRules(deps.config);
       const ruleContext = await buildRulePromptContext(preparedDiff, rules);
+      const model = deps.config.model && deps.config.model !== "default" ? ` with model ${deps.config.model}` : "";
+      progress(
+        `Asking ${deps.config.provider}${model} to review the diff...`,
+        `Waiting for a JSON review result. Timeout: ${deps.config.review.timeoutSeconds}s.`
+      );
       const result = await deps.provider.review({
         diff: preparedDiff,
         targets,
@@ -70,28 +107,17 @@ export function createReviewEngine(deps: ReviewEngineDeps): ReviewEngine {
         model: deps.config.model,
         metadata: options.pr ? { pr: options.pr } : undefined
       });
+      progress(`Checking ${commentLabel(result.comments.length)} from the reviewer...`, "Keeping only valid changed-line comments.");
       const mapped = mapAndFilterComments(result.comments, targets);
 
       const dryRun = options.dryRun ?? !options.post;
-      let posted = false;
 
-      if (options.pr && options.post && !dryRun) {
-        if (!options.yes) {
-          throw new Error("Posting requires --yes in this first implementation.");
-        }
-        if (!deps.platform) {
-          throw new Error("A review platform integration is required to post PR comments.");
-        }
-        const pr = await deps.platform.getPullRequest(options.pr);
-        await deps.platform.postReviewComments(pr, mapped.comments);
-        posted = true;
-      }
-
+      complete(`Review complete: ${commentLabel(mapped.comments.length)} ready.`);
       return {
         markdown: deps.reporter.render(mapped),
         result: mapped,
         dryRun,
-        posted,
+        posted: false,
         postEligible: mapped.comments.length
       };
     },

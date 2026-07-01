@@ -32,6 +32,8 @@ Review the current branch against the detected default base branch:
 localrabbit review
 ```
 
+In an interactive terminal, `localrabbit review` prints the findings and then asks what to do next: select comments one by one, post all comments, or skip posting. When posting, it infers the current GitHub PR or GitLab MR from the current branch when possible, and only asks for a number if inference fails. Select mode lets you post, skip, edit, post all remaining, or cancel for each comment.
+
 Review explicit refs:
 
 ```bash
@@ -71,6 +73,13 @@ Print machine-readable JSON:
 localrabbit review --diff ./changes.diff --provider mock --json
 ```
 
+Keep an interactive terminal open after the review output:
+
+```bash
+localrabbit review --pause
+LOCALRABBIT_PAUSE_ON_COMPLETE=1 localrabbit review
+```
+
 Review a GitHub PR locally:
 
 ```bash
@@ -83,7 +92,23 @@ Review a GitLab MR locally:
 localrabbit review --platform gitlab --pr 123
 ```
 
-Post all eligible comments to the selected platform. Posting is never implicit:
+Review the findings, then choose which eligible comments to post to the selected platform. Passing `--post` skips the first action prompt and goes straight to comment-by-comment selection. Posting is never implicit:
+
+```bash
+localrabbit review --post
+localrabbit review --pr 123 --post
+localrabbit review --platform gitlab --pr 123 --post
+```
+
+Interactive choices:
+
+- `Enter` or `y`: post this comment.
+- `n`: skip this comment.
+- `e`: replace the comment body, then post it.
+- `a`: post this and all remaining comments.
+- `q`: cancel posting.
+
+Post all eligible comments without prompting:
 
 ```bash
 localrabbit review --pr 123 --post --yes
@@ -292,4 +317,4 @@ Initial providers:
 - Limits oversized diffs to high-risk files.
 - Validates provider JSON with Zod.
 - Filters comments to real changed-line targets.
-- Never posts PR/MR comments unless `--post --yes` are passed.
+- Never posts PR/MR comments unless `--post` is passed and the selected comments are confirmed.
