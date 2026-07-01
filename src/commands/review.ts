@@ -5,9 +5,9 @@ import { readDiffFile } from "@/core/diff.js";
 import { createReviewEngine } from "@/core/review-engine.js";
 import type { ReviewConfig } from "@/core/types.js";
 import { createGitIntegration } from "@/integrations/git.js";
-import { createGitHubIntegration } from "@/integrations/github.js";
 import { createMarkdownReviewReporter } from "@/reporters/markdown.js";
 import { assertProviderName, createProvider } from "@/commands/providers.js";
+import { assertPlatformName, createPlatformIntegration } from "@/commands/platforms.js";
 
 interface ReviewCommandOptions {
   base?: string;
@@ -17,6 +17,7 @@ interface ReviewCommandOptions {
   post?: boolean;
   yes?: boolean;
   provider?: string;
+  platform?: string;
   model?: string;
   output?: string;
   json?: boolean;
@@ -26,31 +27,35 @@ interface ReviewCommandOptions {
 export function registerReviewCommand(program: Command): void {
   program
     .command("review")
-    .description("Review a local diff, patch file, or GitHub PR")
+    .description("Review a local diff, patch file, GitHub PR, or GitLab MR")
     .option("--base <ref>", "Base ref for local diff")
     .option("--head <ref>", "Head ref for local diff")
     .option("--diff <file>", "Existing unified diff file")
-    .option("--pr <number>", "GitHub pull request number")
-    .option("--post", "Post eligible comments to GitHub")
+    .option("--pr <number>", "Pull request or merge request number")
+    .option("--post", "Post eligible comments to the selected platform")
     .option("--yes", "Confirm non-interactive actions such as posting all comments")
-    .option("--provider <provider>", "Provider override: codex-cli, mock")
+    .option("--provider <provider>", "Provider override: codex-cli, claude-cli, mock")
+    .option("--platform <platform>", "PR/MR platform override: github, gitlab")
     .option("--model <model>", "Model override")
     .option("--output <file>", "Write Markdown preview to a file")
     .option("--json", "Print machine-readable JSON result")
-    .option("--dry-run", "Do not post GitHub comments even when --post is passed")
+    .option("--dry-run", "Do not post platform comments even when --post is passed")
     .action(async (options: ReviewCommandOptions) => {
       validateReviewOptions(options);
       assertProviderName(options.provider);
+      assertPlatformName(options.platform);
       const providerOverride = options.provider as ReviewConfig["provider"] | undefined;
+      const platformOverride = options.platform as ReviewConfig["platform"] | undefined;
       const config = loadConfig(process.cwd(), {
         provider: providerOverride,
+        platform: platformOverride,
         model: options.model
       });
       const git = createGitIntegration();
-      const github = createGitHubIntegration();
+      const platform = createPlatformIntegration(config.platform);
       const provider = createProvider(config);
       const reporter = createMarkdownReviewReporter();
-      const engine = createReviewEngine({ config, git, provider, reporter, github });
+      const engine = createReviewEngine({ config, git, provider, reporter, platform });
 
       const pr = options.pr ? Number(options.pr) : undefined;
       const diff = options.diff ? readDiffFile(options.diff) : undefined;
@@ -88,13 +93,13 @@ export function registerReviewCommand(program: Command): void {
 
       if (options.output) {
         console.log(`Wrote Markdown preview to ${options.output}.`);
-        console.log(summaryLine(output.dryRun, output.posted, output.postEligible, Boolean(pr)));
+        console.log(summaryLine(output.dryRun, output.posted, output.postEligible, Boolean(pr), config.platform));
         return;
       }
 
       console.log(output.markdown);
       if (pr) {
-        console.log(`\n${summaryLine(output.dryRun, output.posted, output.postEligible, true)}`);
+        console.log(`\n${summaryLine(output.dryRun, output.posted, output.postEligible, true, config.platform)}`);
       }
     });
 }
@@ -109,15 +114,16 @@ function validateReviewOptions(options: ReviewCommandOptions): void {
   }
 }
 
-function summaryLine(dryRun: boolean, posted: boolean, eligible: number, prMode: boolean): string {
+function summaryLine(dryRun: boolean, posted: boolean, eligible: number, prMode: boolean, platform: ReviewConfig["platform"]): string {
+  const label = platform === "gitlab" ? "GitLab" : "GitHub";
   if (!prMode) {
     return `Generated ${eligible} review comment(s).`;
   }
   if (posted) {
-    return `Posted ${eligible} GitHub review comment(s).`;
+    return `Posted ${eligible} ${label} review comment(s).`;
   }
   if (dryRun) {
-    return `Dry run: generated ${eligible} eligible GitHub comment(s); no comments were posted.`;
+    return `Dry run: generated ${eligible} eligible ${label} comment(s); no comments were posted.`;
   }
-  return `Generated ${eligible} eligible GitHub comment(s); no comments were posted.`;
+  return `Generated ${eligible} eligible ${label} comment(s); no comments were posted.`;
 }

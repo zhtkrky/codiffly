@@ -1,6 +1,6 @@
 import type { ReviewProvider } from "@/providers/provider.js";
-import type { GitHubIntegration } from "@/integrations/github.js";
 import type { GitIntegration } from "@/integrations/git.js";
+import type { ReviewPlatformIntegration } from "@/integrations/platform.js";
 import { byteLength } from "@/core/diff.js";
 import { filterExcludedFiles, limitDiffToRiskyFiles } from "@/core/risk.js";
 import { extractChangedLineTargets } from "@/core/targets.js";
@@ -17,17 +17,17 @@ export interface ReviewEngineDeps {
   git: GitIntegration;
   provider: ReviewProvider;
   reporter: Reporter;
-  github?: GitHubIntegration;
+  platform?: ReviewPlatformIntegration;
 }
 
 export function createReviewEngine(deps: ReviewEngineDeps): ReviewEngine {
   const resolveDiff = async (options: ReviewRunOptions): Promise<string> => {
     if (options.pr) {
-      if (!deps.github) {
-        throw new Error("GitHub integration is required for --pr.");
+      if (!deps.platform) {
+        throw new Error("A review platform integration is required for --pr.");
       }
-      await deps.github.getPullRequest(options.pr);
-      return deps.github.getPullRequestDiff(options.pr);
+      await deps.platform.getPullRequest(options.pr);
+      return deps.platform.getPullRequestDiff(options.pr);
     }
 
     const base = options.base ?? (await deps.git.defaultBaseBranch());
@@ -79,11 +79,11 @@ export function createReviewEngine(deps: ReviewEngineDeps): ReviewEngine {
         if (!options.yes) {
           throw new Error("Posting requires --yes in this first implementation.");
         }
-        if (!deps.github) {
-          throw new Error("GitHub integration is required to post PR comments.");
+        if (!deps.platform) {
+          throw new Error("A review platform integration is required to post PR comments.");
         }
-        const pr = await deps.github.getPullRequest(options.pr);
-        await deps.github.postReviewComments(pr, mapped.comments);
+        const pr = await deps.platform.getPullRequest(options.pr);
+        await deps.platform.postReviewComments(pr, mapped.comments);
         posted = true;
       }
 
@@ -97,10 +97,10 @@ export function createReviewEngine(deps: ReviewEngineDeps): ReviewEngine {
     },
 
     async check(options: CheckRunOptions, reporter: Reporter<ThreadCheckResult>): Promise<string> {
-      if (!deps.github) {
-        throw new Error("GitHub integration is required for check --pr.");
+      if (!deps.platform) {
+        throw new Error("A review platform integration is required for check --pr.");
       }
-      const threads = await deps.github.unresolvedThreads(options.pr);
+      const threads = await deps.platform.unresolvedThreads(options.pr);
       if (!deps.provider.checkThreads) {
         throw new Error("Selected provider does not support thread checks.");
       }

@@ -1,6 +1,6 @@
 # localrabbit
 
-`localrabbit` is a local-first AI code review CLI. It reviews local Git diffs, existing patch files, and GitHub PRs while keeping posting disabled unless explicitly requested.
+`localrabbit` is a local-first AI code review CLI. It reviews local Git diffs, existing patch files, GitHub PRs, and GitLab MRs while keeping posting disabled unless explicitly requested.
 
 ## Install
 
@@ -49,6 +49,14 @@ Use a provider override:
 ```bash
 localrabbit review --provider mock
 localrabbit review --provider codex-cli
+localrabbit review --provider claude-cli
+```
+
+Use a platform override for PR/MR mode:
+
+```bash
+localrabbit review --platform github --pr 123
+localrabbit review --platform gitlab --pr 123
 ```
 
 Write Markdown preview to a file:
@@ -69,10 +77,17 @@ Review a GitHub PR locally:
 localrabbit review --pr 123
 ```
 
-Post all eligible comments to GitHub. Posting is never implicit:
+Review a GitLab MR locally:
+
+```bash
+localrabbit review --platform gitlab --pr 123
+```
+
+Post all eligible comments to the selected platform. Posting is never implicit:
 
 ```bash
 localrabbit review --pr 123 --post --yes
+localrabbit review --platform gitlab --pr 123 --post --yes
 ```
 
 Preview PR comments without posting, even with `--post`:
@@ -174,6 +189,7 @@ Frontend repo:
 
 ```yaml
 provider: codex-cli
+platform: github
 rules:
   - security
   - performance
@@ -192,6 +208,7 @@ Backend repo:
 
 ```yaml
 provider: codex-cli
+platform: github
 rules:
   - security
   - performance
@@ -209,6 +226,7 @@ Full-stack repo:
 
 ```yaml
 provider: codex-cli
+platform: github
 rules:
   - security
   - performance
@@ -241,8 +259,13 @@ npm pack
 ## Tests
 
 ```bash
+npm run check
 npm test
 ```
+
+`npm run check` runs type checking, tests, and a built CLI smoke check. Use `npm test` when you only need the unit test suite.
+
+Lefthook installs a `pre-commit` hook during `npm install` via the `prepare` script. The hook runs `npm run check`.
 
 The test suite covers diff target extraction, risky file ranking, provider JSON validation, Markdown rendering, and config defaults/merging. Example fixtures live in `tests/fixtures`.
 
@@ -252,8 +275,14 @@ The package exposes the `localrabbit` binary from `bin/localrabbit`.
 
 Initial providers:
 
-- `codex-cli`: calls `codex exec` and expects JSON output.
+- `codex-cli`: calls `codex exec` and expects JSON output. Requires the Codex CLI to be installed and authenticated.
+- `claude-cli`: calls `claude -p` and expects JSON output. Requires the Claude CLI to be installed and authenticated.
 - `mock`: deterministic comments for tests and development.
+
+## Platforms
+
+- `github`: uses the `gh` CLI for PR diffs, comments, and unresolved review threads. Requires GitHub CLI to be installed and authenticated with access to the repository.
+- `gitlab`: uses the `glab` CLI for MR diffs, comments, and unresolved discussions. Requires GitLab CLI to be installed and authenticated with access to the project. The GitLab project path is inferred from the repository's `origin` remote, so `origin` must point at the GitLab project being reviewed.
 
 ## Safety Defaults
 
@@ -263,4 +292,4 @@ Initial providers:
 - Limits oversized diffs to high-risk files.
 - Validates provider JSON with Zod.
 - Filters comments to real changed-line targets.
-- Never posts GitHub comments unless `--post --yes` are passed.
+- Never posts PR/MR comments unless `--post --yes` are passed.

@@ -25,7 +25,8 @@ export const threadCheckResultSchema = z.object({
 });
 
 export const configSchema = z.object({
-  provider: z.enum(["codex-cli", "mock"]).default("codex-cli"),
+  provider: z.enum(["codex-cli", "claude-cli", "mock"]).default("codex-cli"),
+  platform: z.enum(["github", "gitlab"]).default("github"),
   model: z.string().default("default"),
   review: z
     .object({

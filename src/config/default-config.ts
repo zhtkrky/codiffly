@@ -2,6 +2,7 @@ import type { ReviewConfig } from "@/core/types.js";
 
 export const defaultConfig: ReviewConfig = {
   provider: "codex-cli",
+  platform: "github",
   model: "default",
   review: {
     contextLines: 1,

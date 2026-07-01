@@ -12,6 +12,7 @@ describe("config loading", () => {
     const config = loadConfig(dir);
 
     assert.equal(config.provider, "codex-cli");
+    assert.equal(config.platform, "github");
     assert.equal(config.review.contextLines, 1);
     assert.equal(config.github.post, false);
     assert.ok(config.exclude.includes("package-lock.json"));
