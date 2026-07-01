@@ -1,14 +1,12 @@
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { execa } from "execa";
 import { reviewResultSchema, parseProviderJson, threadCheckResultSchema } from "@/core/schemas.js";
 import { formatTargetsForPrompt } from "@/core/targets.js";
 import type { ReviewInput, ReviewResult, ThreadCheckInput, ThreadCheckResult } from "@/core/types.js";
 import { ensureCommand } from "@/integrations/git.js";
+import { renderTemplate } from "@/providers/codex-cli.js";
 import type { ReviewProvider } from "@/providers/provider.js";
 
-export function createCodexCliProvider(timeoutSeconds: number): ReviewProvider {
+export function createClaudeCliProvider(timeoutSeconds: number): ReviewProvider {
   return {
     async review(input: ReviewInput): Promise<ReviewResult> {
       const prompt = renderTemplate("review-prompt.md", {
@@ -18,7 +16,7 @@ export function createCodexCliProvider(timeoutSeconds: number): ReviewProvider {
         diff: input.diff
       });
 
-      const raw = await runCodex(prompt, input.model, timeoutSeconds);
+      const raw = await runClaude(prompt, input.model, timeoutSeconds);
       return parseProviderJson(raw, reviewResultSchema);
     },
 
@@ -34,37 +32,32 @@ export function createCodexCliProvider(timeoutSeconds: number): ReviewProvider {
         diff: input.diff ?? "(diff unavailable)"
       });
 
-      const raw = await runCodex(prompt, input.model, timeoutSeconds);
+      const raw = await runClaude(prompt, input.model, timeoutSeconds);
       return parseProviderJson(raw, threadCheckResultSchema);
     }
   };
 }
 
-async function runCodex(prompt: string, model: string, timeoutSeconds: number): Promise<string> {
+async function runClaude(prompt: string, model: string, timeoutSeconds: number): Promise<string> {
   try {
-    await ensureCommand("codex");
+    await ensureCommand("claude");
   } catch {
-    throw new Error("Provider codex-cli requires the Codex CLI. Install and authenticate `codex`, or run with --provider mock.");
+    throw new Error("Provider claude-cli requires the Claude CLI. Install and authenticate `claude`, or run with --provider mock.");
   }
 
-  const args = model && model !== "default" ? ["exec", "--model", model, prompt] : ["exec", prompt];
+  const args = ["-p", prompt];
+  if (model && model !== "default") {
+    args.push("--model", model);
+  }
+
   try {
-    const { stdout } = await execa("codex", args, {
+    const { stdout } = await execa("claude", args, {
       timeout: timeoutSeconds * 1000,
       maxBuffer: 20 * 1024 * 1024
     });
     return stdout;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`Codex CLI review failed. Ensure 'codex' is installed and authenticated. ${message}`);
+    throw new Error(`Claude CLI review failed. Ensure 'claude' is installed and authenticated. ${message}`);
   }
-}
-
-export function renderTemplate(fileName: string, values: Record<string, string>): string {
-  const templatePath = join(dirname(fileURLToPath(import.meta.url)), "../../templates", fileName);
-  let template = readFileSync(templatePath, "utf8");
-  for (const [key, value] of Object.entries(values)) {
-    template = template.replaceAll(`{{${key}}}`, value);
-  }
-  return template;
 }

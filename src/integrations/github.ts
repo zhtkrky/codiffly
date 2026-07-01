@@ -1,18 +1,15 @@
 import { execa } from "execa";
 import type { ReviewComment, ReviewThread, PullRequestInfo } from "@/core/types.js";
 import { ensureCommand } from "@/integrations/git.js";
+import type { ReviewPlatformIntegration } from "@/integrations/platform.js";
 
 interface RepoInfo {
   owner: { login: string };
   name: string;
 }
 
-export interface GitHubIntegration {
+export interface GitHubIntegration extends ReviewPlatformIntegration {
   ensureGhAvailable(): Promise<void>;
-  getPullRequest(number: number): Promise<PullRequestInfo>;
-  getPullRequestDiff(number: number): Promise<string>;
-  postReviewComments(pr: PullRequestInfo, comments: ReviewComment[]): Promise<void>;
-  unresolvedThreads(prNumber: number): Promise<ReviewThread[]>;
 }
 
 export function createGitHubIntegration(cwd = process.cwd()): GitHubIntegration {
@@ -30,6 +27,7 @@ export function createGitHubIntegration(cwd = process.cwd()): GitHubIntegration 
   };
 
   return {
+    name: "GitHub",
     ensureGhAvailable,
     async getPullRequest(number: number): Promise<PullRequestInfo> {
       await ensureGhAvailable();

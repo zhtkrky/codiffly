@@ -1,7 +1,10 @@
 export type Severity = "blocking" | "suggestion" | "question" | "nit";
+export type ProviderName = "codex-cli" | "claude-cli" | "mock";
+export type PlatformName = "github" | "gitlab";
 
 export interface ReviewConfig {
-  provider: "codex-cli" | "mock";
+  provider: ProviderName;
+  platform: PlatformName;
   model: string;
   review: {
     contextLines: number;

@@ -9,7 +9,7 @@ const program = new Command();
 
 program
   .name("localrabbit")
-  .description("Local-first AI code review for Git diffs and GitHub PRs")
+  .description("Local-first AI code review for Git diffs, GitHub PRs, and GitLab MRs")
   .version("0.1.0");
 
 registerInitCommand(program);

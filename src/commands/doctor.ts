@@ -3,6 +3,7 @@ import { execa } from "execa";
 import { loadConfig } from "@/config/load.js";
 import { createGitIntegration } from "@/integrations/git.js";
 import { providerNames } from "@/commands/providers.js";
+import { platformNames } from "@/commands/platforms.js";
 
 interface DoctorCheck {
   name: string;
@@ -26,12 +27,22 @@ export function registerDoctorCommand(program: Command): void {
         detail: (await git.isInsideWorkTree()) ? "inside a Git repository" : "not inside a Git repository"
       });
       checks.push(await commandCheck("gh", "gh --version"));
+      checks.push(await commandCheck("glab", "glab --version"));
       checks.push(await commandCheck("codex", "codex --version"));
+      checks.push(await commandCheck("claude", "claude --version"));
 
       const providerLines = providerNames.map((provider) => {
         if (provider === "mock") return `- mock: available`;
+        if (provider === "claude-cli") {
+          const claude = checks.find((check) => check.name === "claude");
+          return `- claude-cli: ${claude?.ok ? "available" : "missing claude CLI"}`;
+        }
         const codex = checks.find((check) => check.name === "codex");
         return `- codex-cli: ${codex?.ok ? "available" : "missing codex CLI"}`;
+      });
+      const platformLines = platformNames.map((platform) => {
+        const check = checks.find((item) => item.name === (platform === "gitlab" ? "glab" : "gh"));
+        return `- ${platform}: ${check?.ok ? "available" : `missing ${platform === "gitlab" ? "glab" : "gh"} CLI`}`;
       });
 
       console.log("localrabbit doctor\n");
@@ -39,8 +50,11 @@ export function registerDoctorCommand(program: Command): void {
         console.log(`${check.ok ? "ok" : "fail"} ${check.name}: ${check.detail}`);
       }
       console.log(`\nConfigured provider: ${config.provider}`);
+      console.log(`Configured platform: ${config.platform}`);
       console.log("Provider availability:");
       console.log(providerLines.join("\n"));
+      console.log("Platform availability:");
+      console.log(platformLines.join("\n"));
     });
 }
 
