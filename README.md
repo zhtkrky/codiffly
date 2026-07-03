@@ -1,3 +1,6 @@
+
+<img width="2172" height="724" alt="codiffly" src="https://github.com/user-attachments/assets/9c237024-cd58-458a-9f59-2c235e9a4094" />
+
 # codiffly 🐨
 
 `codiffly` is a local-first AI code review CLI. It reviews local Git diffs, existing patch files, GitHub PRs, and GitLab MRs while keeping posting disabled unless explicitly requested.
