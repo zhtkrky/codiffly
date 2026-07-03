@@ -8,15 +8,20 @@
 ## Install
 
 ```bash
-npm install
-npm run build
-npm link
+npm install -g codiffly
+```
+
+Or run it without installing globally:
+
+```bash
+npx codiffly --help
 ```
 
 ## Development
 
 ```bash
 npm install
+npm run build
 npm run dev -- init
 npm run dev -- review --base origin/main --head HEAD
 ```
