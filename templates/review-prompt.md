@@ -2,6 +2,10 @@ You are reviewing a unified diff. Return JSON only.
 
 Rubric: {{rules}}
 
+Review focus:
+
+{{focusContext}}
+
 Rule-specific context for matching files:
 
 {{ruleContext}}

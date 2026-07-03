@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { parseProviderJson, reviewResultSchema, threadCheckResultSchema } from "@/core/schemas.js";
+import { configSchema, parseProviderJson, reviewResultSchema, threadCheckResultSchema } from "@/core/schemas.js";
 
 const fixtureDir = join(process.cwd(), "tests", "fixtures");
 
@@ -27,5 +27,9 @@ describe("provider output validation", () => {
     const result = parseProviderJson(raw, threadCheckResultSchema);
 
     assert.equal(result.checks[0]?.status, "unclear");
+  });
+
+  it("rejects invalid config focus", () => {
+    assert.throws(() => configSchema.parse({ focus: "everything" }), /Invalid option/);
   });
 });

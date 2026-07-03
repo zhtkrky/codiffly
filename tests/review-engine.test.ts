@@ -2,7 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { defaultConfig } from "@/config/default-config.js";
 import { createReviewEngine } from "@/core/review-engine.js";
-import type { MappedReviewResult, Reporter, ReviewConfig } from "@/core/types.js";
+import type { MappedReviewResult, Reporter, ReviewConfig, ReviewInput } from "@/core/types.js";
 import type { GitIntegration } from "@/integrations/git.js";
 import type { ReviewProvider } from "@/providers/provider.js";
 
@@ -61,5 +61,40 @@ describe("review engine progress", () => {
       "Checking 1 comment from the reviewer...",
       "Review complete: 1 comment ready."
     ]);
+  });
+
+  it("passes focus context to the provider", async () => {
+    let reviewInput: ReviewInput | undefined;
+    const config: ReviewConfig = {
+      ...defaultConfig,
+      provider: "mock",
+      focus: "maintainability",
+      rules: [],
+      plugins: []
+    };
+    const git: GitIntegration = {
+      ensureGitAvailable: async () => {},
+      isInsideWorkTree: async () => true,
+      ensureInsideWorkTree: async () => {},
+      defaultBaseBranch: async () => "origin/main",
+      diff: async () => diff,
+      fetch: async () => {}
+    };
+    const provider: ReviewProvider = {
+      review: async (input) => {
+        reviewInput = input;
+        return { comments: [] };
+      }
+    };
+    const reporter: Reporter = {
+      render: () => "No review comments."
+    };
+
+    const engine = createReviewEngine({ config, git, provider, reporter });
+    await engine.review({ diff });
+
+    assert.equal(reviewInput?.focus, "maintainability");
+    assert.match(reviewInput?.focusContext ?? "", /Focus: maintainability/);
+    assert.match(reviewInput?.focusContext ?? "", /concrete duplication/);
   });
 });

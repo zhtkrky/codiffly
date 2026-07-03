@@ -1,11 +1,11 @@
 {
-  "name": "localrabbit",
+  "name": "codiffly",
   "version": "0.1.0",
-  "description": "Local-first AI code review CLI for Git diffs and GitHub PRs.",
+  "description": "🐨 Local-first AI code review CLI for Git diffs and GitHub PRs.",
   "license": "UNLICENSED",
   "type": "module",
   "bin": {
-    "localrabbit": "./bin/localrabbit"
+    "codiffly": "./bin/codiffly"
   },
   "files": [
     "bin",
@@ -17,7 +17,7 @@
     "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
     "build": "npm run clean && tsc && tsc-alias",
     "check": "npm run typecheck && npm test && npm run cli:check",
-    "cli:check": "npm run build && node bin/localrabbit --help && node bin/localrabbit review --help && node bin/localrabbit check --help && node bin/localrabbit doctor --help",
+    "cli:check": "npm run build && node bin/codiffly --help && node bin/codiffly review --help && node bin/codiffly check --help && node bin/codiffly doctor --help",
     "dev": "tsx src/cli.ts",
     "prepare": "lefthook install",
     "prepack": "npm run build",

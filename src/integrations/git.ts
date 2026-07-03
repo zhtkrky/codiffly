@@ -1,5 +1,5 @@
 import { execa } from "execa";
-import { LocalRabbitError } from "@/core/errors.js";
+import { CodifflyError } from "@/core/errors.js";
 
 export interface GitIntegration {
   ensureGitAvailable(): Promise<void>;
@@ -38,7 +38,7 @@ export function createGitIntegration(cwd = process.cwd()): GitIntegration {
   const ensureInsideWorkTree = async (): Promise<void> => {
     await ensureGitAvailable();
     if (!(await isInsideWorkTree())) {
-      throw new LocalRabbitError("Not inside a Git repository. Run this command from a repository or use --diff <file>.", "NOT_GIT_REPO");
+      throw new CodifflyError("Not inside a Git repository. Run this command from a repository or use --diff <file>.", "NOT_GIT_REPO");
     }
   };
 
@@ -76,6 +76,6 @@ export async function ensureCommand(command: string): Promise<void> {
   try {
     await execa(command, ["--version"]);
   } catch {
-    throw new LocalRabbitError(`Required command not found: ${command}`, "MISSING_COMMAND");
+    throw new CodifflyError(`Required command not found: ${command}`, "MISSING_COMMAND");
   }
 }

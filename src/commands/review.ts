@@ -12,6 +12,7 @@ import { createMarkdownReviewReporter } from "@/reporters/markdown.js";
 import { assertProviderName, createProvider } from "@/commands/providers.js";
 import { assertPlatformName, createPlatformIntegration } from "@/commands/platforms.js";
 import { createProgressReporter } from "@/commands/progress.js";
+import { isReviewFocus } from "@/core/focus.js";
 
 interface ReviewCommandOptions {
   base?: string;
@@ -22,6 +23,7 @@ interface ReviewCommandOptions {
   yes?: boolean;
   provider?: string;
   platform?: string;
+  focus?: string;
   model?: string;
   output?: string;
   json?: boolean;
@@ -41,6 +43,7 @@ export function registerReviewCommand(program: Command): void {
     .option("--yes", "Confirm non-interactive actions such as posting all comments")
     .option("--provider <provider>", "Provider override: codex-cli, claude-cli, mock")
     .option("--platform <platform>", "PR/MR platform override: github, gitlab")
+    .option("--focus <focus>", "Review focus override: balanced, details, maintainability, risk")
     .option("--model <model>", "Model override")
     .option("--output <file>", "Write Markdown preview to a file")
     .option("--json", "Print machine-readable JSON result")
@@ -50,11 +53,13 @@ export function registerReviewCommand(program: Command): void {
       validateReviewOptions(options);
       assertProviderName(options.provider);
       assertPlatformName(options.platform);
+      assertReviewFocus(options.focus);
       const providerOverride = options.provider as ReviewConfig["provider"] | undefined;
       const platformOverride = options.platform as ReviewConfig["platform"] | undefined;
       const config = loadConfig(process.cwd(), {
         provider: providerOverride,
         platform: platformOverride,
+        focus: options.focus,
         model: options.model
       });
       const git = createGitIntegration();
@@ -166,6 +171,12 @@ export function registerReviewCommand(program: Command): void {
     });
 }
 
+function assertReviewFocus(value: string | undefined): asserts value is ReviewConfig["focus"] | undefined {
+  if (value && !isReviewFocus(value)) {
+    throw new Error(`Unsupported review focus '${value}'. Expected one of: balanced, details, maintainability, risk.`);
+  }
+}
+
 function validateReviewOptions(options: ReviewCommandOptions): void {
   const modes = [Boolean(options.diff), Boolean(options.pr), Boolean(options.base || options.head)].filter(Boolean).length;
   if (modes > 1 && (options.diff || options.pr)) {
@@ -188,7 +199,7 @@ function summaryLine(dryRun: boolean, posted: boolean, eligible: number, prMode:
 }
 
 async function waitForEnterBeforeExit(options: ReviewCommandOptions): Promise<void> {
-  const shouldPause = Boolean(options.pause) || process.env.LOCALRABBIT_PAUSE_ON_COMPLETE === "1";
+  const shouldPause = Boolean(options.pause) || process.env.CODIFFLY_PAUSE_ON_COMPLETE === "1";
   if (!shouldPause || !input.isTTY || !outputStream.isTTY) {
     return;
   }

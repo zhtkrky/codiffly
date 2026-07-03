@@ -96,7 +96,7 @@ async function importPlugin(path: string): Promise<unknown> {
       },
       fileName: path
     }).outputText;
-    const dir = mkdtempSync(resolve(tmpdir(), "localrabbit-rule-"));
+    const dir = mkdtempSync(resolve(tmpdir(), "codiffly-rule-"));
     const compiledPath = resolve(dir, `${Date.now()}-${Math.random().toString(16).slice(2)}.mjs`);
     writeFileSync(compiledPath, output, "utf8");
     return import(pathToFileURL(compiledPath).href);

@@ -45,7 +45,7 @@ export function registerDoctorCommand(program: Command): void {
         return `- ${platform}: ${check?.ok ? "available" : `missing ${platform === "gitlab" ? "glab" : "gh"} CLI`}`;
       });
 
-      console.log("localrabbit doctor\n");
+      console.log("codiffly doctor\n");
       for (const check of checks) {
         console.log(`${check.ok ? "ok" : "fail"} ${check.name}: ${check.detail}`);
       }

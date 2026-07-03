@@ -4,6 +4,7 @@ import type { ReviewPlatformIntegration } from "@/integrations/platform.js";
 import { byteLength } from "@/core/diff.js";
 import { filterExcludedFiles, limitDiffToRiskyFiles } from "@/core/risk.js";
 import { extractChangedLineTargets } from "@/core/targets.js";
+import { buildFocusPromptContext } from "@/core/focus.js";
 import type {
   CheckRunOptions,
   MappedReviewResult,
@@ -94,6 +95,7 @@ export function createReviewEngine(deps: ReviewEngineDeps): ReviewEngine {
       progress("Loading review rules...", deps.config.rules.length ? deps.config.rules.join(", ") : "No rules enabled.");
       const rules = await loadReviewRules(deps.config);
       const ruleContext = await buildRulePromptContext(preparedDiff, rules);
+      const focusContext = buildFocusPromptContext(deps.config.focus);
       const model = deps.config.model && deps.config.model !== "default" ? ` with model ${deps.config.model}` : "";
       progress(
         `Asking ${deps.config.provider}${model} to review the diff...`,
@@ -104,6 +106,8 @@ export function createReviewEngine(deps: ReviewEngineDeps): ReviewEngine {
         targets,
         rules: deps.config.rules,
         ruleContext,
+        focus: deps.config.focus,
+        focusContext,
         model: deps.config.model,
         metadata: options.pr ? { pr: options.pr } : undefined
       });

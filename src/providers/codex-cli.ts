@@ -13,6 +13,8 @@ export function createCodexCliProvider(timeoutSeconds: number): ReviewProvider {
     async review(input: ReviewInput): Promise<ReviewResult> {
       const prompt = renderTemplate("review-prompt.md", {
         rules: input.rules.join(", "),
+        focus: input.focus,
+        focusContext: input.focusContext,
         ruleContext: input.ruleContext?.trim() || "(No rule-specific context matched these files.)",
         targets: formatTargetsForPrompt(input.targets),
         diff: input.diff

@@ -27,12 +27,25 @@ describe("review rules", () => {
     assert.doesNotMatch(context, /Rule: accessibility/);
   });
 
+  it("makes zero-config built-ins useful without plugins", async () => {
+    const config = loadConfig(tmpdir());
+    const rules = await loadReviewRules(config);
+    const context = await buildRulePromptContext(diff, rules);
+
+    assert.match(context, /Rule: security/);
+    assert.match(context, /Rule: api-contract/);
+    assert.match(context, /Rule: error-handling/);
+    assert.match(context, /Rule: concurrency/);
+    assert.match(context, /Rule: tests/);
+    assert.deepEqual(config.plugins, []);
+  });
+
   it("loads explicit local TypeScript plugin rules", async () => {
-    const dir = join(tmpdir(), `localrabbit-rules-${process.pid}`);
+    const dir = join(tmpdir(), `codiffly-rules-${process.pid}`);
     const pluginDir = join(dir, "review-rules");
     mkdirSync(pluginDir, { recursive: true });
     writeFileSync(
-      join(dir, ".localrabbit.yml"),
+      join(dir, ".codiffly.yml"),
       ["provider: mock", "rules:", "  - security", "plugins:", "  - ./review-rules/no-dangerous-sql.ts"].join("\n"),
       "utf8"
     );
@@ -59,7 +72,7 @@ describe("review rules", () => {
   });
 
   it("rejects plugin paths outside the config directory", async () => {
-    const dir = join(tmpdir(), `localrabbit-rules-outside-${process.pid}`);
+    const dir = join(tmpdir(), `codiffly-rules-outside-${process.pid}`);
     mkdirSync(dir, { recursive: true });
     const config = { ...loadConfig(dir), plugins: ["../outside.ts"] };
 
@@ -67,7 +80,7 @@ describe("review rules", () => {
   });
 
   it("rejects TypeScript plugin runtime relative imports with a clear error", async () => {
-    const dir = join(tmpdir(), `localrabbit-rules-relative-import-${process.pid}`);
+    const dir = join(tmpdir(), `codiffly-rules-relative-import-${process.pid}`);
     const pluginDir = join(dir, "review-rules");
     mkdirSync(pluginDir, { recursive: true });
     writeFileSync(

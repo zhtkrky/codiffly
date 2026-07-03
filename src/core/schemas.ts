@@ -1,6 +1,9 @@
 import { z } from "zod";
+import { reviewFocusValues } from "@/core/focus.js";
 
 export const severitySchema = z.enum(["blocking", "suggestion", "question", "nit"]);
+export const presetSchema = z.enum(["recommended", "frontend", "backend", "node-api", "infra", "minimal"]);
+export const reviewFocusSchema = z.enum(reviewFocusValues);
 
 export const reviewResultSchema = z.object({
   comments: z.array(
@@ -27,6 +30,8 @@ export const threadCheckResultSchema = z.object({
 export const configSchema = z.object({
   provider: z.enum(["codex-cli", "claude-cli", "mock"]).default("codex-cli"),
   platform: z.enum(["github", "gitlab"]).default("github"),
+  preset: presetSchema.default("recommended"),
+  focus: reviewFocusSchema.default("balanced"),
   model: z.string().default("default"),
   review: z
     .object({

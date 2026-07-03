@@ -13,7 +13,7 @@ export interface GitHubReviewPayload {
 
 export function toGitHubReviewPayload(comments: ReviewComment[]): GitHubReviewPayload {
   return {
-    body: "localrabbit review",
+    body: "codiffly review",
     event: "COMMENT",
     comments: comments.map((comment) => ({
       path: comment.path,

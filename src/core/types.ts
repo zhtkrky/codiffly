@@ -1,10 +1,14 @@
 export type Severity = "blocking" | "suggestion" | "question" | "nit";
 export type ProviderName = "codex-cli" | "claude-cli" | "mock";
 export type PlatformName = "github" | "gitlab";
+export type PresetName = "recommended" | "frontend" | "backend" | "node-api" | "infra" | "minimal";
+export type ReviewFocus = "balanced" | "details" | "maintainability" | "risk";
 
 export interface ReviewConfig {
   provider: ProviderName;
   platform: PlatformName;
+  preset: PresetName;
+  focus: ReviewFocus;
   model: string;
   review: {
     contextLines: number;
@@ -47,6 +51,8 @@ export interface ReviewInput {
   targets: ChangedLineTarget[];
   rules: string[];
   ruleContext?: string;
+  focus: ReviewFocus;
+  focusContext: string;
   model: string;
   metadata?: Record<string, unknown>;
 }

@@ -1,8 +1,11 @@
 import type { ReviewConfig } from "@/core/types.js";
+import { rulesForPreset } from "@/rules/builtin.js";
 
 export const defaultConfig: ReviewConfig = {
   provider: "codex-cli",
   platform: "github",
+  preset: "recommended",
+  focus: "balanced",
   model: "default",
   review: {
     contextLines: 1,
@@ -26,6 +29,6 @@ export const defaultConfig: ReviewConfig = {
     "*.min.js",
     "*.map"
   ],
-  rules: ["security", "performance", "tests", "accessibility", "database-migration-safety"],
+  rules: rulesForPreset("recommended"),
   plugins: []
 };
