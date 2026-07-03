@@ -1,5 +1,5 @@
 
-<img width="2172" height="724" alt="codiffly" src="https://github.com/user-attachments/assets/9c237024-cd58-458a-9f59-2c235e9a4094" />
+<img width="1920" height="640" alt="codiffly" src="https://github.com/user-attachments/assets/ef454fc7-bcfe-459c-8dd3-94398c0ce253" />
 
 # codiffly 🐨
 
