@@ -1,0 +1,43 @@
+{
+  "name": "codiffly",
+  "version": "0.1.0",
+  "description": "🐨 Local-first AI code review CLI for Git diffs and GitHub PRs.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "bin": {
+    "codiffly": "./bin/codiffly"
+  },
+  "files": [
+    "bin",
+    "dist",
+    "templates",
+    "README.md"
+  ],
+  "scripts": {
+    "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
+    "build": "npm run clean && tsc && tsc-alias",
+    "check": "npm run typecheck && npm test && npm run cli:check",
+    "cli:check": "npm run build && node bin/codiffly --help && node bin/codiffly review --help && node bin/codiffly check --help && node bin/codiffly doctor --help",
+    "dev": "tsx src/cli.ts",
+    "prepare": "lefthook install",
+    "prepack": "npm run build",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test tests/**/*.test.ts"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "commander": "^15.0.0",
+    "execa": "^9.6.1",
+    "typescript": "^6.0.3",
+    "yaml": "^2.9.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.0.1",
+    "lefthook": "^2.1.9",
+    "tsc-alias": "^1.8.17",
+    "tsx": "^4.22.4"
+  }
+}

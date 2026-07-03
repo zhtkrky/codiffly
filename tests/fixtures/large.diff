@@ -1,0 +1,37 @@
+diff --git a/docs/readme.md b/docs/readme.md
+index 0000000..1111111 100644
+--- a/docs/readme.md
++++ b/docs/readme.md
+@@ -1,3 +1,7 @@
+ # Docs
++line 1
++line 2
++line 3
++line 4
+ text
+diff --git a/src/auth/session.ts b/src/auth/session.ts
+index 0000000..1111111 100644
+--- a/src/auth/session.ts
++++ b/src/auth/session.ts
+@@ -1,3 +1,10 @@
+ export function session() {
++  const token = "";
++  if (!token) return null;
++  audit(token);
++  refresh(token);
++  validate(token);
++  persist(token);
++  return token;
+ }
+diff --git a/package-lock.json b/package-lock.json
+index 0000000..1111111 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -1,3 +1,8 @@
+ {
++  "noise1": true,
++  "noise2": true,
++  "noise3": true,
++  "noise4": true,
++  "noise5": true,
+ }
