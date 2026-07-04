@@ -142,6 +142,7 @@ export interface PullRequestInfo {
 export interface ReviewRunResult {
   markdown: string;
   result: MappedReviewResult;
+  diff: string;
   dryRun: boolean;
   posted: boolean;
   postEligible: number;

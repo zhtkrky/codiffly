@@ -13,6 +13,7 @@ import { assertProviderName, createProvider } from "@/commands/providers.js";
 import { assertPlatformName, createPlatformIntegration } from "@/commands/platforms.js";
 import { createProgressReporter } from "@/commands/progress.js";
 import { isReviewFocus } from "@/core/focus.js";
+import { browseReviewComments } from "@/commands/review-tui.js";
 
 interface ReviewCommandOptions {
   base?: string;
@@ -29,6 +30,7 @@ interface ReviewCommandOptions {
   json?: boolean;
   dryRun?: boolean;
   pause?: boolean;
+  tui?: boolean;
 }
 
 export function registerReviewCommand(program: Command): void {
@@ -49,6 +51,7 @@ export function registerReviewCommand(program: Command): void {
     .option("--json", "Print machine-readable JSON result")
     .option("--dry-run", "Do not post platform comments even when --post is passed")
     .option("--pause", "Wait for Enter before exiting after printing the review")
+    .option("--tui", "Browse review comments with inline diff context before output or posting")
     .action(async (options: ReviewCommandOptions) => {
       validateReviewOptions(options);
       assertProviderName(options.provider);
@@ -96,6 +99,11 @@ export function registerReviewCommand(program: Command): void {
         throw error;
       }
 
+      if (options.tui) {
+        const browserResult = await browseReviewComments(output.diff, output.result.comments);
+        output = withReviewComments(output, browserResult.comments);
+      }
+
       if (options.output) {
         writeFileSync(options.output, `${output.markdown}\n`, "utf8");
       }
@@ -108,7 +116,7 @@ export function registerReviewCommand(program: Command): void {
             pr: postPr,
             platform,
             platformName: config.platform,
-            mode: options.yes ? "all" : "select"
+            mode: options.yes || options.tui ? "all" : "select"
           });
         }
         console.log(
@@ -136,7 +144,7 @@ export function registerReviewCommand(program: Command): void {
             pr: postPr,
             platform,
             platformName: config.platform,
-            mode: options.yes ? "all" : "select"
+            mode: options.yes || options.tui ? "all" : "select"
           });
         }
         console.log(summaryLine(output.dryRun, output.posted, output.postEligible, Boolean(pr), config.platform));
@@ -163,7 +171,7 @@ export function registerReviewCommand(program: Command): void {
           pr: postRequest.pr,
           platform,
           platformName: config.platform,
-          mode: postRequest.mode
+          mode: options.tui ? "all" : postRequest.mode
         });
         console.log(summaryLine(output.dryRun, output.posted, output.postEligible, true, config.platform));
       }
@@ -181,6 +189,9 @@ function validateReviewOptions(options: ReviewCommandOptions): void {
   const modes = [Boolean(options.diff), Boolean(options.pr), Boolean(options.base || options.head)].filter(Boolean).length;
   if (modes > 1 && (options.diff || options.pr)) {
     throw new Error("Use only one review source: --diff, --pr, or --base/--head.");
+  }
+  if (options.tui && (!input.isTTY || !outputStream.isTTY)) {
+    throw new Error("--tui requires an interactive TTY.");
   }
 }
 
@@ -479,6 +490,17 @@ async function editCommentBody(rl: ReturnType<typeof createInterface>, comment: 
 }
 
 function withPostingResult(output: ReviewRunResult, comments: ReviewComment[], posted: boolean): ReviewRunResult {
+  return withReviewComments(
+    {
+      ...output,
+      dryRun: false,
+      posted
+    },
+    comments
+  );
+}
+
+function withReviewComments(output: ReviewRunResult, comments: ReviewComment[]): ReviewRunResult {
   const result: MappedReviewResult = {
     ...output.result,
     comments
@@ -488,8 +510,6 @@ function withPostingResult(output: ReviewRunResult, comments: ReviewComment[], p
     ...output,
     markdown: createMarkdownReviewReporter().render(result),
     result,
-    dryRun: false,
-    posted,
     postEligible: comments.length
   };
 }
