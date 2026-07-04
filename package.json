@@ -1,6 +1,6 @@
 {
   "name": "codiffly",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Local-first AI code review CLI for Git diffs, GitHub PRs, and GitLab MRs.",
   "license": "MIT",
   "type": "module",
