@@ -120,6 +120,7 @@ export function createReviewEngine(deps: ReviewEngineDeps): ReviewEngine {
       return {
         markdown: deps.reporter.render(mapped),
         result: mapped,
+        diff: preparedDiff,
         dryRun,
         posted: false,
         postEligible: mapped.comments.length

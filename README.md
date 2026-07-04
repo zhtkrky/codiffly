@@ -91,6 +91,13 @@ Print machine-readable JSON:
 codiffly review --diff ./changes.diff --provider mock --json
 ```
 
+Browse generated comments beside their matching diff context before output or posting:
+
+```bash
+codiffly review --tui
+codiffly review --pr 123 --post --tui
+```
+
 Keep an interactive terminal open after the review output:
 
 ```bash
